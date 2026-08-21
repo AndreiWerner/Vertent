@@ -1,7 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3333";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3333";
-
 console.log("🔗 API URL:", API_URL);
 
 export class ApiError extends Error {
@@ -79,7 +77,7 @@ export const api = {
     path: string,
     method: "POST" | "PUT",
     formData: FormData,
-    onProgress?: (percent: number) => void
+    onProgress?: (percent: number) => void,
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -105,11 +103,14 @@ export const api = {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(body);
         } else {
-          reject(new ApiError(body?.error || "Erro ao enviar o modelo.", xhr.status));
+          reject(
+            new ApiError(body?.error || "Erro ao enviar o modelo.", xhr.status),
+          );
         }
       };
 
-      xhr.onerror = () => reject(new ApiError("Erro de conexão com o servidor.", 0));
+      xhr.onerror = () =>
+        reject(new ApiError("Erro de conexão com o servidor.", 0));
 
       xhr.send(formData);
     });
