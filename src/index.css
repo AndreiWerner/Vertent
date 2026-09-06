@@ -39,4 +39,10 @@ h3 {
   .input:focus {
     @apply border-vertente;
   }
+  .input-cell {
+    @apply rounded-md border border-vertente-medium/25 px-2 py-1 text-sm outline-none;
+  }
+  .input-cell:focus {
+    @apply border-vertente;
+  }
 }
