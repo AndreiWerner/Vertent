@@ -7,7 +7,7 @@ import { PdfDropzone } from "../components/PdfDropzone";
 import { ConfrontantesReview, type Ponto, type Confrontante } from "../components/ConfrontantesReview";
 import { api, ApiError } from "../lib/api";
 
-type Terreno = {
+type Terreno ={
   id: number;
   matricula: string;
   proprietario: string;
