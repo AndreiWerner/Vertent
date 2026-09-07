@@ -30,7 +30,7 @@ export function NovoTerreno() {
   // endpoints usados em EditarTerreno.tsx, que exigem :id na rota).
   const [terrenoId, setTerrenoId] = useState<number | null>(null);
 
-  // ---- Planta do imóvel (confrontantes) -- mesmo fluxo de EditarTerreno.tsx ----
+  // ---- Planta do imóvel (documento) ----
   const [plantaFile, setPlantaFile] = useState<File | null>(null);
   const [plantaProgress, setPlantaProgress] = useState<number | null>(null);
   const [plantaEnviando, setPlantaEnviando] = useState(false);
@@ -42,7 +42,7 @@ export function NovoTerreno() {
   const [salvandoConfrontantes, setSalvandoConfrontantes] = useState(false);
   const [confrontantesSucesso, setConfrontantesSucesso] = useState<string | null>(null);
 
-  // ---- Memorial descritivo -- mesmo fluxo de EditarTerreno.tsx ----
+  // ---- Memorial descritivo (fonte principal da extração) ----
   const [memorialFile, setMemorialFile] = useState<File | null>(null);
   const [memorialProgress, setMemorialProgress] = useState<number | null>(null);
   const [memorialEnviando, setMemorialEnviando] = useState(false);
@@ -193,6 +193,12 @@ export function NovoTerreno() {
         setMemorialProgress
       );
       setMemorialUrl(resultado.memorial_pdf_url);
+      // O memorial é a fonte principal da automação: a resposta já traz
+      // pontos e confrontantes extraídos para conferência antes de salvar.
+      setPontos(resultado.pontos ?? []);
+      setConfrontantes(resultado.confrontantes ?? []);
+      setAviso(resultado.aviso ?? null);
+      setConfrontantesSucesso(null);
     } catch (err) {
       setMemorialErro(err instanceof ApiError ? err.message : "Erro ao enviar o memorial");
     } finally {
@@ -330,8 +336,7 @@ export function NovoTerreno() {
           <section className="mt-6 rounded-xl2 bg-white p-6 shadow-card">
             <h2 className="mb-1 text-base font-semibold text-vertente-dark">Planta do imóvel</h2>
             <p className="mb-4 text-sm text-vertente-medium">
-              Envie o PDF da planta para identificar automaticamente os pontos e confrontantes.
-              Nada é salvo até você conferir e clicar em "Confirmar e salvar" abaixo.
+              Envie o PDF da planta do imóvel. Os pontos e confrontantes não são extraídos desta etapa; a fonte principal da automação é o memorial descritivo.
             </p>
 
             {plantaUrl ? (
@@ -361,49 +366,7 @@ export function NovoTerreno() {
             {plantaErro && (
               <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{plantaErro}</p>
             )}
-
-            {(pontos.length > 0 || confrontantes.length > 0 || plantaUrl) && !plantaEnviando && (
-              <div className="mt-6 border-t border-vertente-bg pt-6">
-                <h3 className="mb-4 text-sm font-semibold text-vertente-ink">
-                  Conferência dos confrontantes
-                </h3>
-                <ConfrontantesReview
-                  pontos={pontos}
-                  confrontantes={confrontantes}
-                  aviso={aviso}
-                  onChange={(novosPontos, novosConfrontantes) => {
-                    setPontos(novosPontos);
-                    setConfrontantes(novosConfrontantes);
-                  }}
-                />
-
-                {confrontantesSucesso && (
-                  <p className="mt-4 rounded-lg bg-vertente-light/30 px-4 py-3 text-sm text-vertente-dark">
-                    {confrontantesSucesso}
-                  </p>
-                )}
-
-                <div className="mt-6 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleConfirmarConfrontantes}
-                    disabled={salvandoConfrontantes}
-                    className="rounded-lg bg-vertente px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-vertente-dark disabled:opacity-60"
-                  >
-                    {salvandoConfrontantes ? "Salvando..." : "Confirmar e salvar"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelarConfrontantes}
-                    disabled={salvandoConfrontantes}
-                    className="rounded-lg px-5 py-2.5 text-sm font-medium text-vertente-medium transition-colors hover:bg-vertente-bg disabled:opacity-60"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
+        </section>
 
           <section className="mt-6 rounded-xl2 bg-white p-6 shadow-card">
             <h2 className="mb-1 text-base font-semibold text-vertente-dark">Memorial Descritivo</h2>
@@ -432,13 +395,57 @@ export function NovoTerreno() {
             />
 
             {memorialEnviando && (
-              <p className="mt-3 text-sm text-vertente-medium">Enviando memorial...</p>
+              <p className="mt-3 text-sm text-vertente-medium">Enviando e processando memorial...</p>
             )}
 
             {memorialErro && (
               <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{memorialErro}</p>
             )}
-          </section>
+                    {(pontos.length > 0 || confrontantes.length > 0) && !memorialEnviando && (
+            <div className="mt-6 border-t border-vertente-bg pt-6">
+              <h3 className="mb-1 text-sm font-semibold text-vertente-ink">
+                Conferência da extração do memorial
+              </h3>
+              <p className="mb-4 text-xs text-vertente-medium">
+                Os dados abaixo foram extraídos automaticamente do memorial. Revise e corrija apenas se necessário. Nada é gravado até confirmar.
+              </p>
+              <ConfrontantesReview
+                pontos={pontos}
+                confrontantes={confrontantes}
+                aviso={aviso}
+                onChange={(novosPontos, novosConfrontantes) => {
+                  setPontos(novosPontos);
+                  setConfrontantes(novosConfrontantes);
+                }}
+              />
+
+              {confrontantesSucesso && (
+                <p className="mt-4 rounded-lg bg-vertente-light/30 px-4 py-3 text-sm text-vertente-dark">
+                  {confrontantesSucesso}
+                </p>
+              )}
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleConfirmarConfrontantes}
+                  disabled={salvandoConfrontantes}
+                  className="rounded-lg bg-vertente px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-vertente-dark disabled:opacity-60"
+                >
+                  {salvandoConfrontantes ? "Salvando..." : "Confirmar e salvar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelarConfrontantes}
+                  disabled={salvandoConfrontantes}
+                  className="rounded-lg px-5 py-2.5 text-sm font-medium text-vertente-medium transition-colors hover:bg-vertente-bg disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
 
           <div className="mt-6 flex justify-end">
             <button
