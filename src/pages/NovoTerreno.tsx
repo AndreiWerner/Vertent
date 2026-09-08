@@ -48,6 +48,13 @@ export function NovoTerreno() {
   const [memorialEnviando, setMemorialEnviando] = useState(false);
   const [memorialErro, setMemorialErro] = useState<string | null>(null);
   const [memorialUrl, setMemorialUrl] = useState<string | null>(null);
+  // Marca que o backend já tentou processar um memorial nesta sessão,
+  // independente de ter conseguido extrair algo. Sem isso, um retorno
+  // com pontos/confrontantes vazios (ex.: extração automática falhou)
+  // escondia a seção de conferência inteira -- inclusive o aviso e os
+  // botões de "+ Adicionar manualmente" -- justamente quando o admin
+  // mais precisava deles.
+  const [memorialProcessado, setMemorialProcessado] = useState(false);
 
   function handleSelectFile(selected: File | null) {
     setFile(selected);
@@ -199,6 +206,7 @@ export function NovoTerreno() {
       setConfrontantes(resultado.confrontantes ?? []);
       setAviso(resultado.aviso ?? null);
       setConfrontantesSucesso(null);
+      setMemorialProcessado(true);
     } catch (err) {
       setMemorialErro(err instanceof ApiError ? err.message : "Erro ao enviar o memorial");
     } finally {
@@ -401,7 +409,7 @@ export function NovoTerreno() {
             {memorialErro && (
               <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{memorialErro}</p>
             )}
-                    {(pontos.length > 0 || confrontantes.length > 0) && !memorialEnviando && (
+                    {(memorialProcessado || pontos.length > 0 || confrontantes.length > 0) && !memorialEnviando && (
             <div className="mt-6 border-t border-vertente-bg pt-6">
               <h3 className="mb-1 text-sm font-semibold text-vertente-ink">
                 Conferência da extração do memorial
