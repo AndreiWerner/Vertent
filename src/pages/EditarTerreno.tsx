@@ -379,7 +379,13 @@ export function EditarTerreno() {
           file={memorialFile}
           onSelect={handleSelecionarMemorial}
           progress={memorialProgress}
-          label="Arraste o PDF do memorial aqui"
+          label="Arraste o PDF, DOC ou DOCX do memorial aqui"
+          extensoesAceitas={[".pdf", ".doc", ".docx"]}
+          mimetypesAceitos={[
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          ]}
         />
 
         {memorialEnviando && (

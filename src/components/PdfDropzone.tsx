@@ -5,6 +5,12 @@ type Props = {
   onSelect: (file: File | null) => void;
   progress?: number | null;
   label?: string;
+  // Extensões aceitas (com ponto, ex.: ".pdf") e mimetypes correspondentes.
+  // Padrão: só PDF -- mesmo comportamento de antes. A Planta continua
+  // usando o padrão (precisa de PDF pra extrair a tabela de coordenadas
+  // por posição na página); o Memorial passa também .doc/.docx.
+  extensoesAceitas?: string[];
+  mimetypesAceitos?: string[];
 };
 
 function formatSize(bytes: number) {
@@ -12,7 +18,17 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function PdfDropzone({ file, onSelect, progress, label = "Arraste o PDF aqui" }: Props) {
+const EXTENSOES_PADRAO = [".pdf"];
+const MIMETYPES_PADRAO = ["application/pdf"];
+
+export function PdfDropzone({
+  file,
+  onSelect,
+  progress,
+  label = "Arraste o PDF aqui",
+  extensoesAceitas = EXTENSOES_PADRAO,
+  mimetypesAceitos = MIMETYPES_PADRAO,
+}: Props) {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -20,8 +36,12 @@ export function PdfDropzone({ file, onSelect, progress, label = "Arraste o PDF a
     const picked = fileList?.[0];
     if (!picked) return;
 
-    if (!picked.name.toLowerCase().endsWith(".pdf") && picked.type !== "application/pdf") {
-      alert("Selecione um arquivo .pdf");
+    const nome = picked.name.toLowerCase();
+    const extensaoValida = extensoesAceitas.some((ext) => nome.endsWith(ext));
+    const mimetypeValido = mimetypesAceitos.includes(picked.type);
+
+    if (!extensaoValida && !mimetypeValido) {
+      alert(`Selecione um arquivo ${extensoesAceitas.join(", ")}`);
       return;
     }
     onSelect(picked);
@@ -55,12 +75,14 @@ export function PdfDropzone({ file, onSelect, progress, label = "Arraste o PDF a
         >
           Selecionar arquivo
         </button>
-        <p className="mt-3 text-xs text-vertente-medium">Formato aceito: .pdf</p>
+        <p className="mt-3 text-xs text-vertente-medium">
+          Formato aceito: {extensoesAceitas.join(", ")}
+        </p>
 
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,application/pdf"
+          accept={[...extensoesAceitas, ...mimetypesAceitos].join(",")}
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
