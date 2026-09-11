@@ -1,4 +1,15 @@
-export type Ponto = { numero: number | string; x: number | string; y: number | string };
+export type Ponto = {
+  numero: number | string;
+  x: number | string;
+  y: number | string;
+  // Presentes só quando o backend identificou Lat/Long mas não pôde
+  // converter pra UTM sozinho (sem datum confiável) -- usados pelo
+  // recálculo manual de datum na tela de conferência (ver
+  // EditarTerreno.tsx / NovoTerreno.tsx). Nunca editados diretamente
+  // aqui, só passados adiante quando outro campo do mesmo ponto muda.
+  lat?: number;
+  lon?: number;
+};
 export type Confrontante = {
   nome: string;
   matricula: string | null;

@@ -5,6 +5,7 @@ import { GlbDropzone } from "../components/GlbDropzone";
 import { GlbPreview, fileToPreviewUrl } from "../components/GlbPreview";
 import { PdfDropzone } from "../components/PdfDropzone";
 import { ConfrontantesReview, type Ponto, type Confrontante } from "../components/ConfrontantesReview";
+import { RecalcularDatum } from "../components/RecalcularDatum";
 import { api, ApiError } from "../lib/api";
 
 export function NovoTerreno() {
@@ -39,6 +40,9 @@ export function NovoTerreno() {
   const [pontos, setPontos] = useState<Ponto[]>([]);
   const [confrontantes, setConfrontantes] = useState<Confrontante[]>([]);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [sistemaCoordenadas, setSistemaCoordenadas] = useState<
+    { tipo: "UTM" | "LAT_LONG" | null; confiavel: boolean } | null
+  >(null);
   const [salvandoConfrontantes, setSalvandoConfrontantes] = useState(false);
   const [confrontantesSucesso, setConfrontantesSucesso] = useState<string | null>(null);
 
@@ -205,6 +209,7 @@ export function NovoTerreno() {
       setPontos(resultado.pontos ?? []);
       setConfrontantes(resultado.confrontantes ?? []);
       setAviso(resultado.aviso ?? null);
+      setSistemaCoordenadas(resultado.sistemaCoordenadas ?? null);
       setConfrontantesSucesso(null);
       setMemorialProcessado(true);
     } catch (err) {
@@ -423,6 +428,13 @@ export function NovoTerreno() {
               <p className="mb-4 text-xs text-vertente-medium">
                 Os dados abaixo foram extraídos automaticamente do memorial. Revise e corrija apenas se necessário. Nada é gravado até confirmar.
               </p>
+              <RecalcularDatum
+                terrenoId={terrenoId!}
+                sistemaCoordenadas={sistemaCoordenadas}
+                pontos={pontos}
+                onRecalculado={setPontos}
+              />
+
               <ConfrontantesReview
                 pontos={pontos}
                 confrontantes={confrontantes}
