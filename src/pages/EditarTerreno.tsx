@@ -7,12 +7,14 @@ import { PdfDropzone } from "../components/PdfDropzone";
 import { ConfrontantesReview, type Ponto, type Confrontante } from "../components/ConfrontantesReview";
 import { RecalcularDatum } from "../components/RecalcularDatum";
 import { api, ApiError } from "../lib/api";
+import { formatArea, formatMetros, opcoesUnidadeArea } from "../lib/format";
 
 type Terreno ={
   id: number;
   matricula: string;
   proprietario: string;
   area: string | null;
+  area_unidade: string | null;
   perimetro: string | null;
   altura_max: number | null;
   altura_min: number | null;
@@ -27,6 +29,7 @@ export function EditarTerreno() {
 
   const [terreno, setTerreno] = useState<Terreno | null>(null);
   const [area, setArea] = useState("");
+  const [areaUnidade, setAreaUnidade] = useState("ha");
   const [perimetro, setPerimetro] = useState("");
   const [alturaMax, setAlturaMax] = useState("");
   const [alturaMin, setAlturaMin] = useState("");
@@ -72,6 +75,7 @@ export function EditarTerreno() {
       .then((data: Terreno) => {
         setTerreno(data);
         setArea(data.area ?? "");
+        setAreaUnidade(data.area_unidade ?? "ha");
         setPerimetro(data.perimetro ?? "");
         setAlturaMax(data.altura_max?.toString() ?? "");
         setAlturaMin(data.altura_min?.toString() ?? "");
@@ -105,6 +109,7 @@ export function EditarTerreno() {
 
     const formData = new FormData();
     formData.append("area", area);
+    formData.append("area_unidade", areaUnidade);
     formData.append("perimetro", perimetro);
     formData.append("altura_max", alturaMax);
     formData.append("altura_min", alturaMin);
@@ -229,6 +234,15 @@ export function EditarTerreno() {
       setSistemaCoordenadas(resultado.sistemaCoordenadas ?? null);
       setConfrontantesSucesso(null);
       setMemorialProcessado(true);
+      // ETAPA 2: área/perímetro/cotas extraídos automaticamente do
+      // memorial (Etapa 1 no Backend). Preenche os mesmos campos de
+      // "Dados técnicos" acima -- nada é salvo até o admin clicar em
+      // "Salvar alterações".
+      if (resultado.area !== undefined) setArea(resultado.area?.toString() ?? "");
+      if (resultado.area_unidade) setAreaUnidade(resultado.area_unidade);
+      if (resultado.perimetro !== undefined) setPerimetro(resultado.perimetro?.toString() ?? "");
+      if (resultado.altura_max !== undefined) setAlturaMax(resultado.altura_max?.toString() ?? "");
+      if (resultado.altura_min !== undefined) setAlturaMin(resultado.altura_min?.toString() ?? "");
     } catch (err) {
       setMemorialErro(err instanceof ApiError ? err.message : "Erro ao enviar o memorial");
     } finally {
@@ -263,24 +277,37 @@ export function EditarTerreno() {
             Dados técnicos
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Área">
-              <input value={area} onChange={(e) => setArea(e.target.value)} className="input" />
+            <Field label={`Área${area ? ` — ${formatArea(area, areaUnidade)}` : ""}`}>
+              <div className="flex gap-2">
+                <input value={area} onChange={(e) => setArea(e.target.value)} className="input" />
+                <select
+                  value={areaUnidade}
+                  onChange={(e) => setAreaUnidade(e.target.value)}
+                  className="input w-24"
+                >
+                  {opcoesUnidadeArea(areaUnidade).map((unidade) => (
+                    <option key={unidade} value={unidade}>
+                      {unidade}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </Field>
-            <Field label="Perímetro">
+            <Field label={`Perímetro${perimetro ? ` — ${formatMetros(perimetro)}` : ""}`}>
               <input
                 value={perimetro}
                 onChange={(e) => setPerimetro(e.target.value)}
                 className="input"
               />
             </Field>
-            <Field label="Altura máxima">
+            <Field label={`Cota máxima${alturaMax ? ` — ${formatMetros(alturaMax)}` : ""}`}>
               <input
                 value={alturaMax}
                 onChange={(e) => setAlturaMax(e.target.value)}
                 className="input"
               />
             </Field>
-            <Field label="Altura mínima">
+            <Field label={`Cota mínima${alturaMin ? ` — ${formatMetros(alturaMin)}` : ""}`}>
               <input
                 value={alturaMin}
                 onChange={(e) => setAlturaMin(e.target.value)}

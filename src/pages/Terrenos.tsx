@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Layout } from "../components/Layout";
 import { StatusBadge } from "../components/ui";
 import { api, ApiError } from "../lib/api";
+import { formatArea, formatMetros } from "../lib/format";
 
 type Terreno = {
   id: number;
@@ -10,6 +11,7 @@ type Terreno = {
   proprietario: string;
   status_usuario: "ativo" | "inativo";
   area: string | null;
+  area_unidade: string | null;
   perimetro: string | null;
   url_terreno: string;
 };
@@ -119,8 +121,8 @@ export function Terrenos() {
               <tr key={t.id} className="border-b border-vertente-bg/60 last:border-0">
                 <td className="px-6 py-3">{t.proprietario}</td>
                 <td className="px-6 py-3">{t.matricula}</td>
-                <td className="px-6 py-3">{t.area ?? "—"}</td>
-                <td className="px-6 py-3">{t.perimetro ?? "—"}</td>
+                <td className="px-6 py-3">{formatArea(t.area, t.area_unidade)}</td>
+                <td className="px-6 py-3">{formatMetros(t.perimetro)}</td>
                 <td className="px-6 py-3">
                   <StatusBadge status={t.status_usuario} />
                 </td>

@@ -7,6 +7,7 @@ import { PdfDropzone } from "../components/PdfDropzone";
 import { ConfrontantesReview, type Ponto, type Confrontante } from "../components/ConfrontantesReview";
 import { RecalcularDatum } from "../components/RecalcularDatum";
 import { api, ApiError } from "../lib/api";
+import { formatArea, formatMetros, opcoesUnidadeArea } from "../lib/format";
 
 export function NovoTerreno() {
   const navigate = useNavigate();
@@ -15,9 +16,13 @@ export function NovoTerreno() {
   const [cpf, setCpf] = useState("");
   const [matricula, setMatricula] = useState("");
   const [area, setArea] = useState("");
+  const [areaUnidade, setAreaUnidade] = useState("ha");
   const [perimetro, setPerimetro] = useState("");
   const [alturaMax, setAlturaMax] = useState("");
   const [alturaMin, setAlturaMin] = useState("");
+  const [salvandoDadosTecnicos, setSalvandoDadosTecnicos] = useState(false);
+  const [dadosTecnicosSucesso, setDadosTecnicosSucesso] = useState<string | null>(null);
+  const [dadosTecnicosErro, setDadosTecnicosErro] = useState<string | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -80,6 +85,7 @@ export function NovoTerreno() {
     formData.append("cpf", cpf);
     formData.append("matricula", matricula);
     formData.append("area", area);
+    formData.append("area_unidade", areaUnidade);
     formData.append("perimetro", perimetro);
     formData.append("altura_max", alturaMax);
     formData.append("altura_min", alturaMin);
@@ -212,10 +218,49 @@ export function NovoTerreno() {
       setSistemaCoordenadas(resultado.sistemaCoordenadas ?? null);
       setConfrontantesSucesso(null);
       setMemorialProcessado(true);
+      // ETAPA 2: área/perímetro/cotas extraídos automaticamente do
+      // memorial (Etapa 1 no Backend). Qualquer um pode vir null --
+      // "—" é tratado na exibição (formatArea/formatMetros), nunca
+      // aqui. Sempre reflete o que a extração deste memorial devolveu,
+      // mesmo que seja null (mesmo princípio de pontos/confrontantes
+      // acima).
+      if (resultado.area !== undefined) setArea(resultado.area?.toString() ?? "");
+      if (resultado.area_unidade) setAreaUnidade(resultado.area_unidade);
+      if (resultado.perimetro !== undefined) setPerimetro(resultado.perimetro?.toString() ?? "");
+      if (resultado.altura_max !== undefined) setAlturaMax(resultado.altura_max?.toString() ?? "");
+      if (resultado.altura_min !== undefined) setAlturaMin(resultado.altura_min?.toString() ?? "");
     } catch (err) {
       setMemorialErro(err instanceof ApiError ? err.message : "Erro ao enviar o memorial");
     } finally {
       setMemorialEnviando(false);
+    }
+  }
+
+  // ETAPA 2: permite corrigir área/perímetro/cotas depois que o
+  // terreno já foi criado (ex.: valor extraído do memorial errado) --
+  // reaproveita o mesmo endpoint de atualização que EditarTerreno.tsx
+  // já usa, sem criar um novo.
+  async function handleSalvarDadosTecnicos() {
+    if (!terrenoId) return;
+
+    setDadosTecnicosErro(null);
+    setDadosTecnicosSucesso(null);
+    setSalvandoDadosTecnicos(true);
+
+    const formData = new FormData();
+    formData.append("area", area);
+    formData.append("area_unidade", areaUnidade);
+    formData.append("perimetro", perimetro);
+    formData.append("altura_max", alturaMax);
+    formData.append("altura_min", alturaMin);
+
+    try {
+      await api.uploadForm(`/admin/terrenos/${terrenoId}`, "PUT", formData);
+      setDadosTecnicosSucesso("Dados técnicos atualizados com sucesso.");
+    } catch (err) {
+      setDadosTecnicosErro(err instanceof ApiError ? err.message : "Erro ao atualizar dados técnicos");
+    } finally {
+      setSalvandoDadosTecnicos(false);
     }
   }
 
@@ -269,39 +314,71 @@ export function NovoTerreno() {
               Dados do terreno
             </h2>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Área">
-                <input
-                  disabled={!!terrenoId}
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                  className="input"
-                />
+              <Field label={`Área${area ? ` — ${formatArea(area, areaUnidade)}` : ""}`}>
+                <div className="flex gap-2">
+                  <input
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    className="input"
+                  />
+                  <select
+                    value={areaUnidade}
+                    onChange={(e) => setAreaUnidade(e.target.value)}
+                    className="input w-24"
+                  >
+                    {opcoesUnidadeArea(areaUnidade).map((unidade) => (
+                      <option key={unidade} value={unidade}>
+                        {unidade}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </Field>
-              <Field label="Perímetro">
+              <Field label={`Perímetro${perimetro ? ` — ${formatMetros(perimetro)}` : ""}`}>
                 <input
-                  disabled={!!terrenoId}
                   value={perimetro}
                   onChange={(e) => setPerimetro(e.target.value)}
                   className="input"
                 />
               </Field>
-              <Field label="Altura máxima">
+              <Field label={`Cota máxima${alturaMax ? ` — ${formatMetros(alturaMax)}` : ""}`}>
                 <input
-                  disabled={!!terrenoId}
                   value={alturaMax}
                   onChange={(e) => setAlturaMax(e.target.value)}
                   className="input"
                 />
               </Field>
-              <Field label="Altura mínima">
+              <Field label={`Cota mínima${alturaMin ? ` — ${formatMetros(alturaMin)}` : ""}`}>
                 <input
-                  disabled={!!terrenoId}
                   value={alturaMin}
                   onChange={(e) => setAlturaMin(e.target.value)}
                   className="input"
                 />
               </Field>
             </div>
+
+            {/* Só depois de criado -- antes disso, esses valores já vão
+                junto com o "Cadastrar" abaixo. Extraídos automaticamente
+                do memorial quando disponível; sempre editáveis pra
+                permitir corrigir uma leitura errada (ETAPA 2, seção 8). */}
+            {terrenoId && (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={handleSalvarDadosTecnicos}
+                  disabled={salvandoDadosTecnicos}
+                  className="rounded-lg bg-vertente px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-vertente-dark disabled:opacity-60"
+                >
+                  {salvandoDadosTecnicos ? "Salvando..." : "Salvar dados técnicos"}
+                </button>
+                {dadosTecnicosSucesso && (
+                  <p className="mt-2 text-sm text-vertente-dark">{dadosTecnicosSucesso}</p>
+                )}
+                {dadosTecnicosErro && (
+                  <p className="mt-2 text-sm text-red-700">{dadosTecnicosErro}</p>
+                )}
+              </div>
+            )}
           </section>
         </div>
 
