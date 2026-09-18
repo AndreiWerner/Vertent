@@ -37,7 +37,9 @@ export function Login() {
           <p className="font-display text-2xl font-semibold text-vertente-dark">
             Vertente
           </p>
-          <p className="mb-8 text-sm text-vertente-medium">Painel administrativo</p>
+          <p className="mb-8 text-sm text-vertente-medium">
+            Entre com seu e-mail e senha.
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

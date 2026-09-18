@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
-import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ProtectedRoute, AdminRoute, TopografoRoute } from "./components/ProtectedRoute";
+import { useAuth } from "./context/AuthContext";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Terrenos } from "./pages/Terrenos";
@@ -9,6 +10,19 @@ import { Usuarios } from "./pages/Usuarios";
 import { Topografos } from "./pages/Topografos";
 import { TopografoDetalhe } from "./pages/TopografoDetalhe";
 import { Configuracoes } from "./pages/Configuracoes";
+import { PainelTopografo } from "./pages/topografo/Painel";
+import { MeusClientes } from "./pages/topografo/MeusClientes";
+import { ClienteDetalhe } from "./pages/topografo/ClienteDetalhe";
+
+// "/" mostra telas diferentes dependendo de quem logou -- o admin
+// continua caindo no Dashboard de sempre, o topógrafo cai no painel
+// dele. Ambos os lados já são um `papel` válido aqui dentro (ver
+// ProtectedRoute em App abaixo, que garante isso antes de renderizar
+// <Home />), então não precisa checar `loading` de novo.
+function Home() {
+  const { papel } = useAuth();
+  return papel === "admin" ? <Dashboard /> : <PainelTopografo />;
+}
 
 export default function App() {
   return (
@@ -19,64 +33,84 @@ export default function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <Home />
           </ProtectedRoute>
         }
       />
+
+      {/* ---- Área exclusiva do administrador ---- */}
       <Route
         path="/terrenos"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <Terrenos />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
         path="/terrenos/novo"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <NovoTerreno />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
         path="/terrenos/:id/editar"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <EditarTerreno />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
         path="/usuarios"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <Usuarios />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
         path="/topografos"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <Topografos />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
         path="/topografos/:id"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <TopografoDetalhe />
-          </ProtectedRoute>
+          </AdminRoute>
         }
       />
       <Route
         path="/configuracoes"
         element={
-          <ProtectedRoute>
+          <AdminRoute>
             <Configuracoes />
-          </ProtectedRoute>
+          </AdminRoute>
+        }
+      />
+
+      {/* ---- Área exclusiva do topógrafo ---- */}
+      <Route
+        path="/meus-clientes"
+        element={
+          <TopografoRoute>
+            <MeusClientes />
+          </TopografoRoute>
+        }
+      />
+      <Route
+        path="/meus-clientes/:clienteId"
+        element={
+          <TopografoRoute>
+            <ClienteDetalhe />
+          </TopografoRoute>
         }
       />
     </Routes>

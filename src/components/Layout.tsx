@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ContourLines } from "./ContourLines";
 
-const navItems = [
+const navItemsAdmin = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/terrenos", label: "Terrenos" },
   { to: "/terrenos/novo", label: "Novo Terreno" },
@@ -12,9 +12,20 @@ const navItems = [
   { to: "/configuracoes", label: "Configurações" },
 ];
 
+const navItemsTopografo = [
+  { to: "/", label: "Painel", end: true },
+  { to: "/meus-clientes", label: "Meus Clientes" },
+];
+
 export function Layout({ children }: { children: ReactNode }) {
-  const { admin, logout } = useAuth();
+  const { papel, admin, topografo, logout } = useAuth();
   const navigate = useNavigate();
+
+  const nome = papel === "admin" ? admin?.nome : topografo?.nome;
+  const navItems = papel === "admin" ? navItemsAdmin : navItemsTopografo;
+  const subtitulo = papel === "admin" ? "Admin" : "Topógrafo";
+  const headerTexto =
+    papel === "admin" ? "Painel administrativo" : "Painel do topógrafo";
 
   function handleLogout() {
     logout();
@@ -31,7 +42,7 @@ export function Layout({ children }: { children: ReactNode }) {
             Vertente
           </p>
           <p className="relative text-xs uppercase tracking-widest text-vertente-light/80">
-            Admin
+            {subtitulo}
           </p>
         </div>
 
@@ -65,10 +76,8 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Main */}
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-black/5 bg-white px-8 py-4">
-          <p className="text-sm text-vertente-medium">Painel administrativo</p>
-          <p className="text-sm font-medium text-vertente-ink">
-            {admin?.nome}
-          </p>
+          <p className="text-sm text-vertente-medium">{headerTexto}</p>
+          <p className="text-sm font-medium text-vertente-ink">{nome}</p>
         </header>
 
         <main className="flex-1 px-8 py-8">{children}</main>
