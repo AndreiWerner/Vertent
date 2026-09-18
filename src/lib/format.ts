@@ -72,3 +72,15 @@ export function formatMetros(valor: number | string | null | undefined): string 
 export function paraNumeroBackend(texto: string): number | null {
   return paraNumero(texto);
 }
+
+/**
+ * ETAPA TOPÓGRAFOS -- formata valor em Reais (R$) via Intl nativo, sem
+ * lib nova. "2" -> "R$ 2,00" / null -> "—". Usado pela mensalidade
+ * calculada (ver src/lib/pricing.ts) e pela configuração de preço por
+ * terreno.
+ */
+export function formatMoeda(valor: number | string | null | undefined): string {
+  const numero = paraNumero(valor);
+  if (numero === null) return "—";
+  return numero.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}

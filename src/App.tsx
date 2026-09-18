@@ -6,6 +6,8 @@ import { Terrenos } from "./pages/Terrenos";
 import { NovoTerreno } from "./pages/NovoTerreno";
 import { EditarTerreno } from "./pages/EditarTerreno";
 import { Usuarios } from "./pages/Usuarios";
+import { Topografos } from "./pages/Topografos";
+import { TopografoDetalhe } from "./pages/TopografoDetalhe";
 import { Configuracoes } from "./pages/Configuracoes";
 
 export default function App() {
@@ -50,6 +52,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Usuarios />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/topografos"
+        element={
+          <ProtectedRoute>
+            <Topografos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/topografos/:id"
+        element={
+          <ProtectedRoute>
+            <TopografoDetalhe />
           </ProtectedRoute>
         }
       />

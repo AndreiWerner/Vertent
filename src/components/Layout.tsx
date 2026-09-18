@@ -8,6 +8,7 @@ const navItems = [
   { to: "/terrenos", label: "Terrenos" },
   { to: "/terrenos/novo", label: "Novo Terreno" },
   { to: "/usuarios", label: "Usuários" },
+  { to: "/topografos", label: "Topógrafos" },
   { to: "/configuracoes", label: "Configurações" },
 ];
 

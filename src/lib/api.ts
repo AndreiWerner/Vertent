@@ -118,3 +118,35 @@ export const api = {
 };
 
 export { getToken };
+
+/**
+ * ETAPA TOPÓGRAFOS -- classificação de erro compartilhada entre
+ * Topografos.tsx e TopografoDetalhe.tsx (seção 15 da especificação:
+ * distinguir sessão expirada / erro de autorização / endpoint que
+ * ainda não existe no Backend / erro genérico, em vez de uma mensagem
+ * só). Puramente aditiva -- não muda o comportamento de nenhuma
+ * chamada já existente em outras páginas, que continuam usando
+ * `ApiError`/`err.message` diretamente como antes.
+ */
+export function classificarErro(err: unknown): { mensagem: string; endpointPendente: boolean } {
+  if (err instanceof ApiError) {
+    if (err.status === 401) {
+      return { mensagem: "Sessão expirada. Faça login novamente.", endpointPendente: false };
+    }
+    if (err.status === 403) {
+      return {
+        mensagem: "Você não tem permissão para acessar este recurso.",
+        endpointPendente: false,
+      };
+    }
+    if (err.status === 404) {
+      return {
+        mensagem:
+          "Este recurso depende de um endpoint administrativo que ainda não existe no Backend. Veja o relatório desta etapa para os detalhes.",
+        endpointPendente: true,
+      };
+    }
+    return { mensagem: err.message, endpointPendente: false };
+  }
+  return { mensagem: "Erro ao comunicar com o Backend.", endpointPendente: false };
+}
